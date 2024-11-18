@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./style.css">
-    <script src="https://d3js.org/d3.v5.min.js"></script> //d3.js library
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js" integrity="sha256-tHoAPGoNdhIR28YHl9DWLzeRfdwigkH7OCBXMrHXhoM=" crossorigin="anonymous"></script> //topojson library
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js" integrity="sha256-tHoAPGoNdhIR28YHl9DWLzeRfdwigkH7OCBXMrHXhoM=" crossorigin="anonymous"></script>
     <title>Choropleth Map</title>
 </head>
 <body>
@@ -15,6 +15,23 @@
     </div>
     <div id="tooltip">
 
+    </div>
+    <div id="filters">
+        <label for="gender-filter">Select Gender:</label>
+        <select id="gender-filter">
+            <option value="all">All Genders</option>
+            <option value="M">Male</option>
+            <option value="F">Female</option>
+        </select>
+
+        <label for="age-filter">Select Age Group:</label>
+        <select id="age-filter">
+            <option value="all">All Age Groups</option>
+            <option value="18-25">18-25</option>
+            <option value="26-35">26-35</option>
+            <option value="36-50">36-50</option>
+            <option value="51+">51+</option>
+        </select>
     </div>
     <svg id='canvas'>
         
@@ -37,6 +54,7 @@
             <text x="60" y="140" fill="white">More than 45%</text>
         </g>
     </svg>
+
 </body>
 <script defer src='statescript.js'></script> //script.js file where js code will be written
 </html>
