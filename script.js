@@ -60,6 +60,7 @@ let drawMap = () => {
                 tooltip.transition()
                     .style('visibility', 'hidden')
             })
+
 }
 
 d3.json(countyURL).then(
