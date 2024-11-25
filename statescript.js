@@ -7,9 +7,10 @@ let stateData; // GeoJSON state data
 let dataset; // Sales data
 let canvas = d3.select('#canvas');
 
-// Color scale
-let colorScale = d3.scaleSequentialLog()
-    .interpolator(d3.interpolateLab("lightcoral", "black")); // Transition from light red to black
+// Piecewise color scale
+let colorScale = d3.scaleThreshold()
+    .domain([10, 50, 100, 500, 1000]) // Thresholds for sales counts
+    .range(["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"]); // Cascading colors
 
 // Process data function
 let processData = (data, genderFilter = null, ageFilter = null) => {
@@ -42,11 +43,6 @@ let processData = (data, genderFilter = null, ageFilter = null) => {
 
 // Draw map function
 let drawMap = (stateData, salesCounts) => {
-    // Dynamically adjust the color scale domain
-    let maxCount = Math.max(...Object.values(salesCounts));
-    let minCount = Math.min(...Object.values(salesCounts).filter(d => d > 0));
-    colorScale.domain([minCount, maxCount]); // Adjust domain dynamically
-
     let projection = d3.geoAlbersUsa();
     let path = d3.geoPath().projection(projection);
 
@@ -62,7 +58,7 @@ let drawMap = (stateData, salesCounts) => {
         .attr('fill', (d) => {
             let state = d.properties.name;
             let count = salesCounts[state] || 0;
-            return count > 0 ? colorScale(count) : "#f0f0f0"; // Default color for zero values
+            return count > 0 ? colorScale(count) : "#f0f0f0"; // Default for zero values
         })
         .attr('stroke', '#000')
         .attr('stroke-width', 0.5);
@@ -72,6 +68,30 @@ let drawMap = (stateData, salesCounts) => {
 let updateMap = (salesCounts) => {
     canvas.selectAll('path').remove(); // Clear existing map
     drawMap(stateData, salesCounts); // Redraw map with updated color scale
+};
+
+// Add legend
+let addLegend = () => {
+    const thresholds = colorScale.domain();
+    const colors = colorScale.range();
+
+    let legend = d3.select('#legend').selectAll('div')
+        .data(thresholds)
+        .enter()
+        .append('div')
+        .attr('class', 'legend-item');
+
+    legend.append('div')
+        .attr('class', 'legend-color')
+        .style('background-color', (d, i) => colors[i]);
+
+    legend.append('div')
+        .attr('class', 'legend-label')
+        .text((d, i) => {
+            if (i === 0) return `< ${thresholds[i]}`;
+            if (i === thresholds.length - 1) return `> ${thresholds[i]}`;
+            return `${thresholds[i - 1]} - ${thresholds[i]}`;
+        });
 };
 
 // Fetch and process data
@@ -88,6 +108,9 @@ Promise.all([
     // Initial rendering (no filters)
     let initialCounts = processData(dataset);
     drawMap(stateData, initialCounts);
+
+    // Add legend
+    addLegend();
 
     // Add event listeners for dropdowns
     d3.select('#gender-filter').on('change', () => {

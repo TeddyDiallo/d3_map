@@ -3,19 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./style.css">
     <script src="https://d3js.org/d3.v5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js" integrity="sha256-tHoAPGoNdhIR28YHl9DWLzeRfdwigkH7OCBXMrHXhoM=" crossorigin="anonymous"></script>
-    <title>Choropleth Map</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <title>Sales Map</title>
 </head>
 <body>
-    <h2 id="title">USA Education Data</h2>
-    <div id="'description">
-        <p>USA Customers Demographics</p>
-    </div>
-    <div id="tooltip">
-
-    </div>
     <div id="filters">
         <label for="gender-filter">Select Gender:</label>
         <select id="gender-filter">
@@ -33,28 +26,8 @@
             <option value="51+">51+</option>
         </select>
     </div>
-    <svg id='canvas'>
-        
-    </svg>
-    <svg id='legend'>
-        <g>
-            <rect x="10" y="0" width="40" height="40" fill="tomato"></rect>
-            <text x="60" y="20" fill="white">Less than 15%</text>
-        </g>
-        <g>
-            <rect x="10" y="40" width="40" height="40" fill="orange"></rect>
-            <text x="60" y="60" fill="white">15% than 30%</text>
-        </g>
-        <g>
-            <rect x="10" y="80" width="40" height="40" fill="lightgreen"></rect>
-            <text x="60" y="100" fill="white">30% to 45%</text>
-        </g>
-        <g>
-            <rect x="10" y="120" width="40" height="40" fill="limegreen"></rect>
-            <text x="60" y="140" fill="white">More than 45%</text>
-        </g>
-    </svg>
-
+    <svg id="canvas"></svg>
+    <div id="legend"></div>
+    <script src="statescript.js"></script>
 </body>
-<script defer src='statescript.js'></script> //script.js file where js code will be written
 </html>
