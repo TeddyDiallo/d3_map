@@ -9,18 +9,32 @@ let canvas = d3.select('#canvas');
 
 // Color scale
 let colorScale = d3.scaleSequential(d3.interpolateBlues).domain([0, 100]);
+//let colorScale = d3.scaleSequential(d3.interpolateCool).domain([0, 100]);
+
+const validStates = new Set([
+    "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
+    "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
+    "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine",
+    "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi",
+    "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey",
+    "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio",
+    "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina",
+    "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia",
+    "Washington", "West Virginia", "Wisconsin", "Wyoming",
+    "District of Columbia"
+]);
 
 // Process data function
 let processData = (data, genderFilter = null, ageFilter = null) => {
     let stateCounts = {};
 
     // Apply gender filter
-    if (genderFilter) {
+    if (genderFilter && genderFilter !== 'all') {
         data = data.filter((d) => d['Customer Gender'] === genderFilter);
     }
 
     // Apply age group filter
-    if (ageFilter) {
+    if (ageFilter && ageFilter !== 'all') {
         data = data.filter((d) => {
             let age = parseFloat(d['Customer Age']);
             if (ageFilter === '18-25') return age >= 18 && age <= 25;
@@ -33,9 +47,11 @@ let processData = (data, genderFilter = null, ageFilter = null) => {
     // Count sales per state
     data.forEach((row) => {
         let state = row['State'];
-        stateCounts[state] = (stateCounts[state] || 0) + 1;
+        if (validStates.has(state)) { // Use Set for efficient state validation
+            stateCounts[state] = (stateCounts[state] || 0) + 1;
+        }
     });
-
+    console.log('State Counts:', stateCounts);
     return stateCounts;
 };
 
@@ -62,6 +78,10 @@ let drawMap = (stateData, salesCounts) => {
 
 // Update map function
 let updateMap = (salesCounts) => {
+    // Dynamically adjust the color scale domain
+    let maxCount = Math.max(...Object.values(salesCounts)); // Get the max sales count
+    colorScale.domain([0, maxCount]); // Adjust the domain dynamically
+
     canvas.selectAll('path').remove(); // Clear existing map
     drawMap(stateData, salesCounts); // Redraw map with filtered data
 };
@@ -81,40 +101,19 @@ Promise.all([
     let initialCounts = processData(dataset);
     drawMap(stateData, initialCounts);
 
-    // Add filter event listeners
-    d3.select('#all-gender').on('click', () => {
-        let counts = processData(dataset);
-        updateMap(counts);
+    // Add event listeners for dropdowns
+    d3.select('#gender-filter').on('change', () => {
+        let gender = d3.select('#gender-filter').node().value;
+        let ageGroup = d3.select('#age-filter').node().value;
+        let filteredCounts = processData(dataset, gender, ageGroup);
+        updateMap(filteredCounts);
     });
 
-    d3.select('#male').on('click', () => {
-        let counts = processData(dataset, 'M');
-        updateMap(counts);
-    });
-
-    d3.select('#female').on('click', () => {
-        let counts = processData(dataset, 'F');
-        updateMap(counts);
-    });
-
-    d3.select('#age-18-25').on('click', () => {
-        let counts = processData(dataset, null, '18-25');
-        updateMap(counts);
-    });
-
-    d3.select('#age-26-35').on('click', () => {
-        let counts = processData(dataset, null, '26-35');
-        updateMap(counts);
-    });
-
-    d3.select('#age-36-50').on('click', () => {
-        let counts = processData(dataset, null, '36-50');
-        updateMap(counts);
-    });
-
-    d3.select('#age-51-plus').on('click', () => {
-        let counts = processData(dataset, null, '51+');
-        updateMap(counts);
+    d3.select('#age-filter').on('change', () => {
+        let gender = d3.select('#gender-filter').node().value;
+        let ageGroup = d3.select('#age-filter').node().value;
+        let filteredCounts = processData(dataset, gender, ageGroup);
+        updateMap(filteredCounts);
     });
 }).catch((error) => {
     console.error('Error loading data:', error);
