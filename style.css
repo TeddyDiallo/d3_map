@@ -39,27 +39,30 @@ select {
 }
 
 #legend {
-    margin-top: 20px;
     display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: 10px;
+    flex-direction: column; /* Stack items vertically */
+    align-items: flex-start; /* Align items to the left */
+    position: absolute; /* Place it relative to the map */
+    top: 200px; /* Adjust as needed to move it lower */
+    right: 150px; /* Move it closer to the map by reducing the right value */
+    gap: 10px; /* Space between items */
+    font-size: 14px;
+    color: white; /* Match your theme */
 }
 
 .legend-item {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
+    align-items: center; /* Align the color box and text horizontally */
+    gap: 10px; /* Space between the color box and the text */
 }
 
 .legend-color {
-    width: 30px;
-    height: 30px;
-    border: 1px solid white;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #000; /* Optional: border for better visibility */
+    display: inline-block;
 }
 
 .legend-label {
     font-size: 14px;
-    color: white;
 }
