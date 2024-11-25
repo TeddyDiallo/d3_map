@@ -38,6 +38,16 @@ let processData = (data, genderFilter = null, ageFilter = null) => {
         stateCounts[state] = (stateCounts[state] || 0) + 1;
     });
 
+    // Log the counts for debugging
+    console.log("State Counts:", stateCounts);
+
+    // Find min and max counts
+    let maxCount = Math.max(...Object.values(stateCounts));
+    let minCount = Math.min(...Object.values(stateCounts).filter((d) => d > 0)); // Ignore zero values
+
+    // Log min and max counts
+    console.log(`Max Count: ${maxCount}, Min Count (non-zero): ${minCount}`);
+
     return stateCounts;
 };
 
@@ -117,6 +127,9 @@ Promise.all([
         let gender = d3.select('#gender-filter').node().value;
         let ageGroup = d3.select('#age-filter').node().value;
 
+        // Log selected filters
+        console.log(`Selected Gender: ${gender}, Selected Age Group: ${ageGroup}`);
+
         // Process filtered data
         let filteredCounts = processData(dataset, gender, ageGroup);
 
@@ -127,6 +140,9 @@ Promise.all([
     d3.select('#age-filter').on('change', () => {
         let gender = d3.select('#gender-filter').node().value;
         let ageGroup = d3.select('#age-filter').node().value;
+
+        // Log selected filters
+        console.log(`Selected Gender: ${gender}, Selected Age Group: ${ageGroup}`);
 
         // Process filtered data
         let filteredCounts = processData(dataset, gender, ageGroup);
