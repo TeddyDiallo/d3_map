@@ -66,3 +66,48 @@ select {
 .legend-label {
     font-size: 14px;
 }
+
+#tooltip {
+    position: absolute;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 5px;
+    display: none;
+}
+
+#map-toggle {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+    gap: 10px;
+}
+
+.toggle-btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #3b4c5a;
+    color: white;
+    transition: background-color 0.3s ease;
+}
+
+.toggle-btn:hover {
+    background-color: #4d6379;
+}
+
+.toggle-btn.active {
+    background-color: #8aa1b8;
+    font-weight: bold;
+}
+
+#time-series-container {
+    margin-top: 20px;
+}
+
+#time-series-chart {
+    background-color: #2a3b4c;
+    border-radius: 5px;
+}

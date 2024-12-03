@@ -3,12 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
     <link rel="stylesheet" href="style.css">
     <title>Sales Map</title>
 </head>
 <body>
+    <!-- Map Toggle Buttons -->
+    <div id="map-toggle">
+        <button id="heatmap-btn" class="toggle-btn active">Heatmap</button>
+        <button id="bubblemap-btn" class="toggle-btn">Bubble Map</button>
+    </div>
+    
+    <!-- Filters -->
     <div id="filters">
         <label for="gender-filter">Select Gender:</label>
         <select id="gender-filter">
@@ -26,8 +33,19 @@
             <option value="51+">51+</option>
         </select>
     </div>
+
+    <!-- Map Container -->
     <svg id="canvas"></svg>
     <div id="legend"></div>
+    <div id="tooltip"></div>
+
+    <!-- Time Series Container -->
+    <div id="time-series-container">
+        <svg id="time-series-chart" width="960" height="300"></svg>
+    </div>
+
+    <!-- Scripts -->
     <script src="statescript.js"></script>
+    <script src="timeseries.js"></script>
 </body>
 </html>

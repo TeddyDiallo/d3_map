@@ -10,6 +10,7 @@ let canvas = d3.select('#canvas');
 // Process data function
 let processData = (data, genderFilter = null, ageFilter = null) => {
     let stateCounts = {};
+    let stateProfits = {};
 
     // Apply gender filter
     if (genderFilter && genderFilter !== 'all') {
@@ -27,46 +28,72 @@ let processData = (data, genderFilter = null, ageFilter = null) => {
         });
     }
 
-    // Count sales per state
+    // Count sales and calculate profits per state
     data.forEach((row) => {
         let state = row['State'];
+        let profit = parseFloat(row['Revenue']) - parseFloat(row['Cost']);
+
         stateCounts[state] = (stateCounts[state] || 0) + 1;
+        stateProfits[state] = (stateProfits[state] || 0) + profit;
     });
 
-    // Log state counts for debugging
-    console.log("State Counts:", stateCounts);
+    // Normalize keys in stateProfits to lowercase
+    let normalizedProfits = {};
+    for (let state in stateProfits) {
+        normalizedProfits[state.toLowerCase()] = stateProfits[state];
+    }
+    stateProfits = normalizedProfits;
 
-    // Find min and max counts
-    let maxCount = Math.max(...Object.values(stateCounts));
-    let minCount = Math.min(...Object.values(stateCounts).filter((d) => d > 0)); // Ignore zero values
-    console.log(`Max Count: ${maxCount}, Min Count (non-zero): ${minCount}`);
-
-    return stateCounts;
+    return { stateCounts, stateProfits };
 };
 
-let drawMap = (stateData, salesCounts) => {
-    // Dynamically calculate thresholds based on data
-    let maxCount = Math.max(...Object.values(salesCounts));
-    let thresholds = [10, 100, 500, 1000];
+// Format thresholds for legend
+let formatThreshold = (value) => {
+    if (value >= 1000) {
+        return `${value / 1000}K`;
+    }
+    return value.toString();
+};
 
-    // Add thresholds dynamically for larger values
+// Add legend function
+let addLegend = (thresholds, colorScale) => {
+    const legendContainer = d3.select('#legend');
+    const colors = colorScale.range();
+
+    colors.forEach((color, i) => {
+        const legendItem = legendContainer.append('div').attr('class', 'legend-item');
+        legendItem.append('div')
+            .attr('class', 'legend-color')
+            .style('background-color', color);
+        legendItem.append('div')
+            .attr('class', 'legend-label')
+            .text(() => {
+                if (i === 0) return `< ${formatThreshold(thresholds[i])}`;
+                if (i === thresholds.length) return `≥ ${formatThreshold(thresholds[i - 1])}`;
+                return `${formatThreshold(thresholds[i - 1])} - ${formatThreshold(thresholds[i])}`;
+            });
+    });
+};
+
+// Draw map function
+let drawMap = (stateData, salesData, mapType = 'heatmap') => {
+    let stateCounts = salesData.stateCounts;
+    let stateProfits = salesData.stateProfits;
+
+    // Clear previous map
+    canvas.selectAll('path').remove();
+    canvas.selectAll('circle').remove();
+    d3.select('#legend').html("");
+
+    let maxCount = Math.max(...Object.values(stateCounts));
+    let thresholds = [10, 100, 500, 1000];
     for (let i = 2000; i <= maxCount; i += 2000) {
         thresholds.push(i);
     }
-    console.log("Dynamic Thresholds:", thresholds); // Debugging
 
-    // Dynamically generate a color range based on thresholds
     let numColors = thresholds.length + 1;
-    let colors;
+    let colors = numColors <= 9 ? d3.schemeReds[numColors] : Array.from({ length: numColors }, (_, i) => d3.interpolateReds(i / (numColors - 1)));
 
-    if (numColors <= 9) {
-        colors = d3.schemeReds[numColors]; // Use predefined color scheme
-    } else {
-        let interpolator = d3.interpolateReds; // Continuous interpolation
-        colors = Array.from({ length: numColors }, (_, i) => interpolator(i / (numColors - 1)));
-    }
-
-    // Create the color scale
     let colorScale = d3.scaleThreshold()
         .domain(thresholds)
         .range(colors);
@@ -74,104 +101,99 @@ let drawMap = (stateData, salesCounts) => {
     let projection = d3.geoAlbersUsa();
     let path = d3.geoPath().projection(projection);
 
-    // Draw the states
-    canvas.selectAll('path')
-        .data(stateData)
-        .enter()
-        .append('path')
-        .attr('d', path)
-        .attr('class', 'state')
-        .transition()
-        .duration(500)
-        .attr('fill', (d) => {
-            let state = d.properties.name;
-            let count = salesCounts[state] || 0;
-            return count > 0 ? colorScale(count) : "#f0f0f0"; // Default for no data
-        })
-        .attr('stroke', '#000')
-        .attr('stroke-width', 0.5);
-
-    // Add legend
-    addLegend(thresholds, colorScale);
-};
-
-//Adding legend
-let addLegend = (thresholds, colorScale) => {
-    const legendContainer = d3.select('#legend');
-    legendContainer.html(""); // Clear previous legend
-    const colors = colorScale.range();
-    // Helper function to format numbers
-    const formatLabel = (value) => {
-        if (value >= 1000) return `${value / 1000}K`; // Convert to "1K", "2K", etc.
-        return value;
-    };
-    // Add a legend item for each color range
-    colors.forEach((color, i) => {
-        const legendItem = legendContainer.append('div').attr('class', 'legend-item');
-        // Add color box
-        legendItem.append('div')
-            .attr('class', 'legend-color')
-            .style('background-color', color);
-        // Add label
-        legendItem.append('div')
-            .attr('class', 'legend-label')
-            .text(() => {
-                if (i === 0) return `< ${formatLabel(thresholds[i])}`; // First range
-                if (i === thresholds.length) return `≥ ${formatLabel(thresholds[i - 1])}`; // Last range
-                return `${formatLabel(thresholds[i - 1])} - ${formatLabel(thresholds[i])}`; // Intermediate ranges
-            });
-    });
-};
-
-
-// Update map function
-let updateMap = (salesCounts) => {
-    canvas.selectAll('path').remove(); // Clear existing map
-    drawMap(stateData, salesCounts); // Redraw map with updated color scale
+    if (mapType === 'heatmap') {
+        canvas.selectAll('path')
+            .data(stateData)
+            .enter()
+            .append('path')
+            .attr('d', path)
+            .attr('fill', (d) => {
+                let state = d.properties.name;
+                let count = stateCounts[state] || 0;
+                return count > 0 ? colorScale(count) : "#f0f0f0";
+            })
+            .attr('stroke', '#000')
+            .attr('stroke-width', 0.5);
+        addLegend(thresholds, colorScale);
+    } else if (mapType === 'bubblemap') {
+        canvas.selectAll('circle')
+            .data(stateData)
+            .enter()
+            .append('circle')
+            .filter((d) => {
+                let state = d.properties.name.toLowerCase();
+                return stateProfits.hasOwnProperty(state);
+            })
+            .attr('cx', (d) => {
+                let centroid = d3.geoCentroid(d);
+                return projection(centroid)[0];
+            })
+            .attr('cy', (d) => {
+                let centroid = d3.geoCentroid(d);
+                return projection(centroid)[1];
+            })
+            .attr('r', (d) => {
+                let state = d.properties.name.toLowerCase();
+                let profit = stateProfits[state] || 0;
+                return Math.sqrt(Math.abs(profit)) / 50;
+            })
+            .attr('fill', (d) => {
+                let state = d.properties.name.toLowerCase();
+                let profit = stateProfits[state] || 0;
+                return profit > 0 ? 'rgba(0, 255, 0, 0.6)' : 'rgba(255, 0, 0, 0.6)';
+            })
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 0.5)
+            .style('pointer-events', 'none');
+    }
 };
 
 // Fetch and process data
 Promise.all([
-    d3.json(stateURL), // Load the states TopoJSON
-    d3.csv(datasetURL) // Load the sales dataset
+    d3.json(stateURL),
+    d3.csv(datasetURL)
 ]).then(([stateTopoData, csvData]) => {
-    // Process the state data into GeoJSON
     stateData = topojson.feature(stateTopoData, stateTopoData.objects.states).features;
-
-    // Store the dataset
     dataset = csvData;
 
-    // Initial rendering (no filters)
     let initialCounts = processData(dataset);
-    drawMap(stateData, initialCounts);
+    drawMap(stateData, initialCounts, 'heatmap');
 
-    // Add event listeners for dropdowns
+    let initialTimeSeries = processTimeSeriesData(dataset);
+    drawTimeSeries(initialTimeSeries);
+
+    // Event listeners for filters
     d3.select('#gender-filter').on('change', () => {
         let gender = d3.select('#gender-filter').node().value;
         let ageGroup = d3.select('#age-filter').node().value;
-
-        // Log selected filters
-        console.log(`Selected Gender: ${gender}, Selected Age Group: ${ageGroup}`);
-
-        // Process filtered data
         let filteredCounts = processData(dataset, gender, ageGroup);
-
-        // Update the map
-        updateMap(filteredCounts);
+        drawMap(stateData, filteredCounts, d3.select('.toggle-btn.active').node().id === 'heatmap-btn' ? 'heatmap' : 'bubblemap');
+        let timeSeriesData = processTimeSeriesData(dataset, gender, ageGroup);
+        drawTimeSeries(timeSeriesData);    
     });
 
     d3.select('#age-filter').on('change', () => {
         let gender = d3.select('#gender-filter').node().value;
         let ageGroup = d3.select('#age-filter').node().value;
-
-        // Log selected filters
-        console.log(`Selected Gender: ${gender}, Selected Age Group: ${ageGroup}`);
-
-        // Process filtered data
         let filteredCounts = processData(dataset, gender, ageGroup);
+        drawMap(stateData, filteredCounts, d3.select('.toggle-btn.active').node().id === 'heatmap-btn' ? 'heatmap' : 'bubblemap');
+        let timeSeriesData = processTimeSeriesData(dataset, gender, ageGroup);
+        drawTimeSeries(timeSeriesData);
+    });
 
-        // Update the map
-        updateMap(filteredCounts);
+    // Map toggle buttons
+    d3.select('#heatmap-btn').on('click', () => {
+        d3.selectAll('.toggle-btn').classed('active', false);
+        d3.select('#heatmap-btn').classed('active', true);
+        let filteredCounts = processData(dataset, d3.select('#gender-filter').node().value, d3.select('#age-filter').node().value);
+        drawMap(stateData, filteredCounts, 'heatmap');
+    });
+
+    d3.select('#bubblemap-btn').on('click', () => {
+        d3.selectAll('.toggle-btn').classed('active', false);
+        d3.select('#bubblemap-btn').classed('active', true);
+        let filteredCounts = processData(dataset, d3.select('#gender-filter').node().value, d3.select('#age-filter').node().value);
+        drawMap(stateData, filteredCounts, 'bubblemap');
     });
 }).catch((error) => {
     console.error('Error loading data:', error);
