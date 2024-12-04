@@ -169,61 +169,230 @@ document.getElementById("toggle-legend").addEventListener("click", function () {
     });
 });
 
-function drawTimeSeries(svgId, data) {
-    const svgWidth = 800; // Width of the time series container
-    const svgHeight = 250; // Height of the time series container
+// function drawTimeSeries(svgId, data) {
+//     const svgWidth = 800; // Width of the time series container
+//     const svgHeight = 250; // Height of the time series container
+
+//     const svg = d3.select(svgId)
+//         .attr('width', svgWidth)
+//         .attr('height', svgHeight);
+
+//     svg.selectAll('*').remove();
+
+//     const margin = { top: 20, right: 30, bottom: 30, left: 50 };
+//     const width = svgWidth - margin.left - margin.right;
+//     const height = svgHeight - margin.top - margin.bottom;
+
+//     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+//     // Example time series data
+//     const timeSeriesData = data.map((d, i) => ({
+//         date: new Date(2023, i, 1), // Example months
+//         value: Math.random() * 100, // Random values
+//     }));
+
+//     // Scales
+//     const x = d3.scaleTime()
+//         .domain(d3.extent(timeSeriesData, d => d.date))
+//         .range([0, width]);
+
+//     const y = d3.scaleLinear()
+//         .domain([0, d3.max(timeSeriesData, d => d.value)])
+//         .nice()
+//         .range([height, 0]);
+
+//     // Axes
+//     g.append('g')
+//         .attr('transform', `translate(0,${height})`)
+//         .call(d3.axisBottom(x).ticks(6));
+
+//     g.append('g').call(d3.axisLeft(y));
+
+//     // Line
+//     const line = d3.line()
+//         .x(d => x(d.date))
+//         .y(d => y(d.value));
+
+//     g.append('path')
+//         .datum(timeSeriesData)
+//         .attr('fill', 'none')
+//         .attr('stroke', '#007acc')
+//         .attr('stroke-width', 2)
+//         .attr('d', line);
+// }
+
+// // Draw the time series chart
+// Promise.resolve().then(() => {
+//     // Use fake data here; replace with actual if available
+//     const fakeData = Array(12).fill(0).map((_, i) => i); // Example data
+//     drawTimeSeries('#time-series-chart', fakeData);
+// });
+
+
+
+
+
+
+function processTimeSeriesData(data, yearFilter = null) {
+    //print the unique years in the dataset
+    console.log("Unique years:", Array.from(new Set(data.map(d => d['Year']))));
+    // Apply year filter if specified
+    if (yearFilter && yearFilter !== 'all') {
+        data = data.filter(d => d['Year'] === yearFilter);
+    }
+
+    const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+
+    // Initialize an array for the 12 months
+    const timeSeries = Array.from({ length: 12 }, (_, monthIndex) => {
+        const month = monthNames[monthIndex];
+        const femaleCount = data.filter(d => d['Month'] === month && d['Customer Gender'] === 'F').length;
+        const maleCount = data.filter(d => d['Month'] === month && d['Customer Gender'] === 'M').length;
+        console.log(month, femaleCount, maleCount);
+
+        return {
+            month,
+            femaleCount,
+            maleCount
+        };
+    });
+    console.log("Time series data:", timeSeries);
+    return timeSeries;
+}
+
+
+
+
+function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
+    const svgWidth = 800; // Match width with other components
+    const svgHeight = 250; // Ensure space for legends and axes
 
     const svg = d3.select(svgId)
         .attr('width', svgWidth)
         .attr('height', svgHeight);
 
-    svg.selectAll('*').remove();
+    svg.selectAll('*').remove(); // Clear previous content
 
-    const margin = { top: 20, right: 30, bottom: 30, left: 50 };
+    const margin = { top: 30, right: 50, bottom: 50, left: 50 };
     const width = svgWidth - margin.left - margin.right;
     const height = svgHeight - margin.top - margin.bottom;
 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Example time series data
-    const timeSeriesData = data.map((d, i) => ({
-        date: new Date(2023, i, 1), // Example months
-        value: Math.random() * 100, // Random values
-    }));
-
     // Scales
-    const x = d3.scaleTime()
-        .domain(d3.extent(timeSeriesData, d => d.date))
+    const xScale = d3.scalePoint()
+        .domain(timeSeriesData.map(d => d.month))
         .range([0, width]);
 
-    const y = d3.scaleLinear()
-        .domain([0, d3.max(timeSeriesData, d => d.value)])
+    const maxCount = d3.max(timeSeriesData, d => Math.max(d.maleCount, d.femaleCount)) || 1;
+    const yScale = d3.scaleLinear()
+        .domain([0, maxCount])
         .nice()
         .range([height, 0]);
 
     // Axes
     g.append('g')
-        .attr('transform', `translate(0,${height})`)
-        .call(d3.axisBottom(x).ticks(6));
+    .attr('transform', `translate(0,${height})`)
+    .call(
+        d3.axisBottom(xScale)
+            .tickFormat(month => month.slice(0, 3)) // Use first 3 letters of month
+    );
 
-    g.append('g').call(d3.axisLeft(y));
+    g.append('g').call(d3.axisLeft(yScale));
 
-    // Line
+    // Line generator
     const line = d3.line()
-        .x(d => x(d.date))
-        .y(d => y(d.value));
+        .x(d => xScale(d.month))
+        .y(d => yScale(d.value));
 
+    const maleLineColor = '#0056b3'; // Darker blue
+    const femaleLineColor = '#d62728'; // Warm red
+
+    // Draw male line
     g.append('path')
-        .datum(timeSeriesData)
+        .datum(timeSeriesData.map(d => ({ month: d.month, value: d.maleCount })))
         .attr('fill', 'none')
-        .attr('stroke', '#007acc')
+        .attr('stroke', maleLineColor)
         .attr('stroke-width', 2)
         .attr('d', line);
+
+    // Draw female line
+    g.append('path')
+        .datum(timeSeriesData.map(d => ({ month: d.month, value: d.femaleCount })))
+        .attr('fill', 'none')
+        .attr('stroke', femaleLineColor)
+        .attr('stroke-width', 2)
+        .attr('d', line);
+
+    // Add points for male line
+    g.selectAll('.male-point')
+        .data(timeSeriesData)
+        .enter()
+        .append('circle')
+        .attr('class', 'male-point')
+        .attr('cx', d => xScale(d.month))
+        .attr('cy', d => yScale(d.maleCount))
+        .attr('r', 4)
+        .attr('fill', maleLineColor);
+
+    // Add points for female line
+    g.selectAll('.female-point')
+        .data(timeSeriesData)
+        .enter()
+        .append('circle')
+        .attr('class', 'female-point')
+        .attr('cx', d => xScale(d.month))
+        .attr('cy', d => yScale(d.femaleCount))
+        .attr('r', 4)
+        .attr('fill', femaleLineColor);
+
+    // Add legend
+    const legend = svg.append('g').attr('transform', `translate(${width + margin.left - 150}, 20)`);
+
+    legend.append('circle').attr('cx', 0).attr('cy', 10).attr('r', 5).style('fill', maleLineColor);
+    legend.append('text').attr('x', 10).attr('y', 15).text('Men').style('font-size', '12px');
+
+    legend.append('circle').attr('cx', 0).attr('cy', 30).attr('r', 5).style('fill', femaleLineColor);
+    legend.append('text').attr('x', 10).attr('y', 35).text('Women').style('font-size', '12px');
+
+    legend.append('text')
+        .attr('x', 0)
+        .attr('y', 0)
+        .text(selectedYear === 'all' ? 'All Years' : `Year: ${selectedYear}`)
+        .style('font-size', '14px')
+        .style('font-weight', 'bold');
 }
 
-// Draw the time series chart
-Promise.resolve().then(() => {
-    // Use fake data here; replace with actual if available
-    const fakeData = Array(12).fill(0).map((_, i) => i); // Example data
-    drawTimeSeries('#time-series-chart', fakeData);
+// Add year filter
+function addYearFilter(containerId, years, onChange) {
+    const container = d3.select(containerId);
+    container.html(''); // Clear previous content
+
+    const select = container.append('select').attr('id', 'year-filter');
+    select.append('option').attr('value', 'all').text('All Years');
+
+    years.forEach(year => {
+        select.append('option').attr('value', year).text(year);
+    });
+
+    select.on('change', function () {
+        const selectedYear = d3.select(this).node().value;
+        onChange(selectedYear);
+    });
+}
+
+// Add year filter and initialize chart
+Promise.all([d3.csv(datasetURL)]).then(([csvData]) => {
+    const years = Array.from(new Set(csvData.map(d => d['Year']))).sort();
+    const timeSeriesData = processTimeSeriesData(csvData);
+
+    addYearFilter('#time-series-controls', years, selectedYear => {
+        const filteredData = processTimeSeriesData(csvData, selectedYear);
+        drawTimeSeries('#time-series-chart', filteredData, selectedYear);
+    });
+
+    drawTimeSeries('#time-series-chart', timeSeriesData, 'all');
 });
