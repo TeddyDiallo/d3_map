@@ -49,8 +49,35 @@ function addLegend(legendId, thresholds, colorScale) {
 
     const colors = colorScale.range();
 
-    // Create a legend item for each threshold
+    // Adjust threshold values
+    const adjustedThresholds = thresholds.map((val) => {
+        if (val >= 1000) {
+            return Math.ceil(val / 1000) * 1000; // Round up to the nearest 1k
+        } else {
+            return Math.ceil(val / 100) * 100; // Round up to the nearest 100
+        }
+    });
+
+    // Determine formatting based on adjusted thresholds
+    const formatValue = (val) => {
+        if (val >= 1000) {
+            return `${val / 1000}k`; // Use 'k' for large values
+        } else {
+            return `${val}`; // Use plain numbers for small values
+        }
+    };
+    // Add "None" for the first item (no data)
+    legendContainer.append('div')
+        .attr('class', 'legend-item')
+        .html(`
+            <div class="legend-color" style="background-color: #f0f0f0"></div>
+            <div class="legend-label">None</div>
+        `);
+
+    // Create legend items for each threshold
     colors.forEach((color, i) => {
+        if (i >= adjustedThresholds.length - 1) return; // Skip unused colors
+
         const legendItem = legendContainer.append('div').attr('class', 'legend-item');
 
         // Add the color box
@@ -62,12 +89,60 @@ function addLegend(legendId, thresholds, colorScale) {
         legendItem.append('div')
             .attr('class', 'legend-label')
             .text(() => {
-                if (i === 0) return 'None'; // For values below the first threshold
-                if (i === thresholds.length) return `≥ ${Math.ceil(thresholds[i - 1] / 1000)}k`; // For values above the last threshold
-                return `${Math.ceil(thresholds[i - 1] / 1000)}k - ${Math.ceil(thresholds[i] / 1000)}k`; // Intermediate ranges
+                if (i === 0) return `0 - ${formatValue(adjustedThresholds[i + 1])}`; // First range
+                if (i === colors.length - 1) return `≥ ${formatValue(adjustedThresholds[i])}`; // Last range
+                return `${formatValue(adjustedThresholds[i])} - ${formatValue(adjustedThresholds[i + 1])}`; // Intermediate ranges
             });
     });
 }
+
+
+// function addLegend(legendId, thresholds, colorScale) {
+//     console.log("tresholds", thresholds);
+//     const legendContainer = d3.select(`#${legendId}`);
+//     legendContainer.html('');
+//     const colors = colorScale.range();
+//     // Adjust threshold values
+//     const adjustedThresholds = thresholds.map((val) => {
+//         if (val >= 1000) {
+//             return Math.ceil(val / 1000) * 1000; // Round up to the nearest 1k
+//         } else {
+//             return Math.ceil(val / 100) * 100; // Round up to the nearest 100
+//         }
+//     });
+//     const formatValue = (val) => {
+//         if (val >= 1000) {
+//             return `${val / 1000}k`; // Use 'k' for large values
+//         } else {
+//             return `${val}`; // Use plain numbers for small values
+//         }
+//     };
+//     console.log("adjustedThresholds", adjustedThresholds);
+//     // Add "None" for the first item (no data)
+//     legendContainer.append('div')
+//         .attr('class', 'legend-item')
+//         .html(`
+//             <div class="legend-color" style="background-color: #f0f0f0"></div>
+//             <div class="legend-label">None</div>
+//         `);
+//     colors.forEach((color, i) => {
+//         const legendItem = legendContainer.append('div').attr('class', 'legend-item');
+//         // Add the color box
+//         legendItem.append('div')
+//             .attr('class', 'legend-color')
+//             .style('background-color', color);
+//         // Add the label
+//         legendItem.append('div')
+//             .attr('class', 'legend-label')
+//             .text(() => {
+//                 if (i === 0) return `0 - ${formatValue(adjustedThresholds[i])}`; // First range
+//                 if (i === adjustedThresholds.length - 1) return `≥ ${formatValue(adjustedThresholds[i - 1])}`; // Last range
+//                 return `${formatValue(adjustedThresholds[i - 1])} - ${formatValue(adjustedThresholds[i])}`; // Intermediate ranges
+//             });
+//     });
+// }
+
+
 
 function drawMap(svgId, stateData, salesData) {
     const svgWidth = 400; // Width of the SVG container
