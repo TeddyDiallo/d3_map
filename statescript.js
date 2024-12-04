@@ -49,100 +49,28 @@ function addLegend(legendId, thresholds, colorScale) {
 
     const colors = colorScale.range();
 
-    // Adjust threshold values
-    const adjustedThresholds = thresholds.map((val) => {
-        if (val >= 1000) {
-            return Math.ceil(val / 1000) * 1000; // Round up to the nearest 1k
-        } else {
-            return Math.ceil(val / 100) * 100; // Round up to the nearest 100
-        }
-    });
-
-    // Determine formatting based on adjusted thresholds
-    const formatValue = (val) => {
-        if (val >= 1000) {
-            return `${val / 1000}k`; // Use 'k' for large values
-        } else {
-            return `${val}`; // Use plain numbers for small values
-        }
-    };
-    // Add "None" for the first item (no data)
-    legendContainer.append('div')
-        .attr('class', 'legend-item')
-        .html(`
-            <div class="legend-color" style="background-color: #f0f0f0"></div>
-            <div class="legend-label">None</div>
-        `);
-
-    // Create legend items for each threshold
+    // Create legend items for each unique threshold
     colors.forEach((color, i) => {
-        if (i >= adjustedThresholds.length - 1) return; // Skip unused colors
-
         const legendItem = legendContainer.append('div').attr('class', 'legend-item');
 
         // Add the color box
         legendItem.append('div')
             .attr('class', 'legend-color')
-            .style('background-color', color);
+            .style('background-color', i === 0 ? '#d3d3d3' : color); // Grey for "None"
 
         // Add the label
         legendItem.append('div')
             .attr('class', 'legend-label')
             .text(() => {
-                if (i === 0) return `0 - ${formatValue(adjustedThresholds[i + 1])}`; // First range
-                if (i === colors.length - 1) return `≥ ${formatValue(adjustedThresholds[i])}`; // Last range
-                return `${formatValue(adjustedThresholds[i])} - ${formatValue(adjustedThresholds[i + 1])}`; // Intermediate ranges
+                if (i === 0) return 'None'; // Hardcode the first range as "None"
+                if (i === thresholds.length) return `≥ ${formatThreshold(thresholds[i - 1])}`; // Last range
+                return `${formatThreshold(thresholds[i - 1])} - ${formatThreshold(thresholds[i])}`; // Intermediate ranges
             });
     });
 }
-
-
-// function addLegend(legendId, thresholds, colorScale) {
-//     console.log("tresholds", thresholds);
-//     const legendContainer = d3.select(`#${legendId}`);
-//     legendContainer.html('');
-//     const colors = colorScale.range();
-//     // Adjust threshold values
-//     const adjustedThresholds = thresholds.map((val) => {
-//         if (val >= 1000) {
-//             return Math.ceil(val / 1000) * 1000; // Round up to the nearest 1k
-//         } else {
-//             return Math.ceil(val / 100) * 100; // Round up to the nearest 100
-//         }
-//     });
-//     const formatValue = (val) => {
-//         if (val >= 1000) {
-//             return `${val / 1000}k`; // Use 'k' for large values
-//         } else {
-//             return `${val}`; // Use plain numbers for small values
-//         }
-//     };
-//     console.log("adjustedThresholds", adjustedThresholds);
-//     // Add "None" for the first item (no data)
-//     legendContainer.append('div')
-//         .attr('class', 'legend-item')
-//         .html(`
-//             <div class="legend-color" style="background-color: #f0f0f0"></div>
-//             <div class="legend-label">None</div>
-//         `);
-//     colors.forEach((color, i) => {
-//         const legendItem = legendContainer.append('div').attr('class', 'legend-item');
-//         // Add the color box
-//         legendItem.append('div')
-//             .attr('class', 'legend-color')
-//             .style('background-color', color);
-//         // Add the label
-//         legendItem.append('div')
-//             .attr('class', 'legend-label')
-//             .text(() => {
-//                 if (i === 0) return `0 - ${formatValue(adjustedThresholds[i])}`; // First range
-//                 if (i === adjustedThresholds.length - 1) return `≥ ${formatValue(adjustedThresholds[i - 1])}`; // Last range
-//                 return `${formatValue(adjustedThresholds[i - 1])} - ${formatValue(adjustedThresholds[i])}`; // Intermediate ranges
-//             });
-//     });
-// }
-
-
+function formatThreshold(value) {
+    return value >= 1000 ? `${Math.ceil(value / 1000)}k` : `${Math.ceil(value)}`;
+}
 
 function drawMap(svgId, stateData, salesData) {
     const svgWidth = 400; // Width of the SVG container
@@ -160,25 +88,16 @@ function drawMap(svgId, stateData, salesData) {
 
     const path = d3.geoPath().projection(projection);
 
-    // Dynamically calculate thresholds
+    // Calculate dynamic thresholds
     const counts = Object.values(salesData.stateCounts);
     const maxCount = d3.max(counts) || 1; // Avoid division by 0
-    const thresholds = d3.range(0, maxCount, maxCount / 9); // Divide into 9 steps for dynamic thresholds
+    let rawThresholds = d3.range(0, maxCount, maxCount / 9); // Generate thresholds
+    const adjustedThresholds = [...new Set(rawThresholds.map(formatToRoundedThreshold))]; // Remove duplicates
 
-    // Define a reddish-to-black color scale
+    // Adjust number of colors based on unique thresholds
     const colorScale = d3.scaleThreshold()
-        .domain(thresholds)
-        .range([
-            '#fee5d9', 
-            '#fcae91',
-            '#fb6a4a',
-            '#de2d26',
-            '#a50f15',
-            '#800000',
-            '#4d0000',
-            '#330000',
-            '#000000' 
-        ]);
+        .domain(adjustedThresholds)
+        .range(adjustedThresholds.map((_, i) => d3.interpolateReds(i / (adjustedThresholds.length - 1))));
 
     // Draw the states on the map
     svg.selectAll('path')
@@ -194,54 +113,15 @@ function drawMap(svgId, stateData, salesData) {
         .attr('stroke', '#000')
         .attr('stroke-width', 0.5);
 
-    addLegend(svgId.replace('#', '') + '-legend', thresholds, colorScale);
+    // Add the legend next to the map
+    addLegend(svgId.replace('#', '') + '-legend', adjustedThresholds, colorScale);
 }
-
-
-// function drawMap(svgId, stateData, salesData) {
-//     const svgWidth = 400; // Width of the SVG container
-//     const svgHeight = 250; // Height of the SVG container
-
-//     const svg = d3.select(svgId)
-//         .attr('width', svgWidth)
-//         .attr('height', svgHeight);
-
-//     svg.selectAll('*').remove(); // Clear the SVG before redrawing
-
-//     const projection = d3.geoAlbersUsa()
-//         .scale(550) // Keep the scaling to fit the SVG correctly
-//         .translate([svgWidth / 2, svgHeight / 2]); // Center the map in the container
-
-//     const path = d3.geoPath().projection(projection);
-
-//     // Dynamically calculate thresholds for better differentiation
-//     const counts = Object.values(salesData.stateCounts);
-//     const maxCount = d3.max(counts) || 1; // Avoid division by 0
-//     const thresholds = d3.range(0, maxCount, maxCount / 9); // Divide into 9 steps for dynamic thresholds
-
-//     // Use a color scale that handles both small and large changes well
-//     const colorScale = d3.scaleThreshold()
-//         .domain(thresholds)
-//         .range(d3.schemeBlues[9]); // Use 9 shades of blue
-
-//     // Draw the states on the map
-//     svg.selectAll('path')
-//         .data(stateData)
-//         .enter()
-//         .append('path')
-//         .attr('d', path)
-//         .attr('fill', d => {
-//             const state = d.properties.name;
-//             const count = salesData.stateCounts[state] || 0;
-//             return count > 0 ? colorScale(count) : "#f0f0f0"; // Default gray for zero values
-//         })
-//         .attr('stroke', '#000')
-//         .attr('stroke-width', 0.5);
-
-//     // Add the legend next to the map
-//     addLegend(svgId.replace('#', '') + '-legend', thresholds, colorScale);
-// }
-
+function formatToRoundedThreshold(value) {
+    if (value >= 1000) {
+        return Math.ceil(value / 1000) * 1000; // Round to the nearest thousand
+    }
+    return Math.ceil(value / 100) * 100; // Round to the nearest hundred
+}
 
 // Load data and draw maps
 Promise.all([d3.json(stateURL), d3.csv(datasetURL)]).then(([topoData, csvData]) => {
@@ -272,7 +152,6 @@ Promise.all([d3.json(stateURL), d3.csv(datasetURL)]).then(([topoData, csvData]) 
 }).catch((error) => {
     console.error('Error loading data:', error);
 });
-
 
 // Toggle legend visibility
 document.getElementById("toggle-legend").addEventListener("click", function () {
