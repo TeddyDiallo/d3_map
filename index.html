@@ -3,49 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Side-by-Side US Maps: Demographics and Profit Analysis</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
-    <link rel="stylesheet" href="style.css">
-    <title>Sales Map</title>
 </head>
 <body>
-    <!-- Map Toggle Buttons -->
-    <div id="map-toggle">
-        <button id="heatmap-btn" class="toggle-btn active">Heatmap</button>
-        <button id="bubblemap-btn" class="toggle-btn">Bubble Map</button>
-    </div>
-    
-    <!-- Filters -->
+    <h2>Side-by-Side US Maps: Demographics and Profit Analysis</h2>
+
+    <!-- Filters Section -->
     <div id="filters">
-        <label for="gender-filter">Select Gender:</label>
+        <label for="gender-filter">Gender:</label>
         <select id="gender-filter">
-            <option value="all">All Genders</option>
+            <option value="all">All</option>
             <option value="M">Male</option>
             <option value="F">Female</option>
         </select>
-
-        <label for="age-filter">Select Age Group:</label>
+        <label for="age-filter">Age Group:</label>
         <select id="age-filter">
-            <option value="all">All Age Groups</option>
+            <option value="all">All</option>
             <option value="18-25">18-25</option>
             <option value="26-35">26-35</option>
             <option value="36-50">36-50</option>
             <option value="51+">51+</option>
         </select>
+        <button id="toggle-legend">Show Legend</button>
     </div>
 
-    <!-- Map Container -->
-    <svg id="canvas"></svg>
-    <div id="legend"></div>
-    <div id="tooltip"></div>
+    <!-- Maps Section -->
+    <div id="map-container">
+        <div id="map1">
+            <h3>Population</h3>
+            <svg id="heatmap"></svg>
+            <div class="legend" id="heatmap-legend">Legend for Population Map</div>
+        </div>
+        <div id="map2">
+            <h3>Profit</h3>
+            <svg id="bubblemap"></svg>
+            <div class="legend" id="bubblemap-legend">Legend for Profit Map</div>
+        </div>
+    </div>
 
-    <!-- Time Series Container -->
+    <!-- Time Series Section -->
     <div id="time-series-container">
-        <svg id="time-series-chart" width="960" height="300"></svg>
+        <h3>Time Series Analysis</h3>
+        <svg id="time-series-chart"></svg>
     </div>
 
-    <!-- Scripts -->
     <script src="statescript.js"></script>
-    <script src="timeseries.js"></script>
 </body>
 </html>
