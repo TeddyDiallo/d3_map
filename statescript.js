@@ -169,66 +169,6 @@ document.getElementById("toggle-legend").addEventListener("click", function () {
     });
 });
 
-// function drawTimeSeries(svgId, data) {
-//     const svgWidth = 800; // Width of the time series container
-//     const svgHeight = 250; // Height of the time series container
-
-//     const svg = d3.select(svgId)
-//         .attr('width', svgWidth)
-//         .attr('height', svgHeight);
-
-//     svg.selectAll('*').remove();
-
-//     const margin = { top: 20, right: 30, bottom: 30, left: 50 };
-//     const width = svgWidth - margin.left - margin.right;
-//     const height = svgHeight - margin.top - margin.bottom;
-
-//     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
-
-//     // Example time series data
-//     const timeSeriesData = data.map((d, i) => ({
-//         date: new Date(2023, i, 1), // Example months
-//         value: Math.random() * 100, // Random values
-//     }));
-
-//     // Scales
-//     const x = d3.scaleTime()
-//         .domain(d3.extent(timeSeriesData, d => d.date))
-//         .range([0, width]);
-
-//     const y = d3.scaleLinear()
-//         .domain([0, d3.max(timeSeriesData, d => d.value)])
-//         .nice()
-//         .range([height, 0]);
-
-//     // Axes
-//     g.append('g')
-//         .attr('transform', `translate(0,${height})`)
-//         .call(d3.axisBottom(x).ticks(6));
-
-//     g.append('g').call(d3.axisLeft(y));
-
-//     // Line
-//     const line = d3.line()
-//         .x(d => x(d.date))
-//         .y(d => y(d.value));
-
-//     g.append('path')
-//         .datum(timeSeriesData)
-//         .attr('fill', 'none')
-//         .attr('stroke', '#007acc')
-//         .attr('stroke-width', 2)
-//         .attr('d', line);
-// }
-
-// // Draw the time series chart
-// Promise.resolve().then(() => {
-//     // Use fake data here; replace with actual if available
-//     const fakeData = Array(12).fill(0).map((_, i) => i); // Example data
-//     drawTimeSeries('#time-series-chart', fakeData);
-// });
-
-
 function processTimeSeriesData(data, yearFilter = null) {
     // Apply year filter if specified
     if (yearFilter && yearFilter !== 'all') {
@@ -252,6 +192,108 @@ function processTimeSeriesData(data, yearFilter = null) {
     return timeSeries;
 }
 
+// function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
+//     const svgWidth = 800; // Match width with other components
+//     const svgHeight = 250; // Ensure space for legends and axes
+
+//     const svg = d3.select(svgId)
+//         .attr('width', svgWidth)
+//         .attr('height', svgHeight);
+
+//     svg.selectAll('*').remove(); // Clear previous content
+
+//     const margin = { top: 30, right: 50, bottom: 50, left: 50 };
+//     const width = svgWidth - margin.left - margin.right;
+//     const height = svgHeight - margin.top - margin.bottom;
+
+//     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+//     // Scales
+//     const xScale = d3.scalePoint()
+//         .domain(timeSeriesData.map(d => d.month))
+//         .range([0, width]);
+
+//     const maxCount = d3.max(timeSeriesData, d => Math.max(d.maleCount, d.femaleCount)) || 1;
+//     const yScale = d3.scaleLinear()
+//         .domain([0, maxCount])
+//         .nice()
+//         .range([height, 0]);
+
+//     // Axes
+//     g.append('g')
+//     .attr('transform', `translate(0,${height})`)
+//     .call(
+//         d3.axisBottom(xScale)
+//             .tickFormat(month => month.slice(0, 3)) // Use first 3 letters of month
+//     );
+
+//     g.append('g').call(d3.axisLeft(yScale));
+
+//     // Line generator
+//     const line = d3.line()
+//         .x(d => xScale(d.month))
+//         .y(d => yScale(d.value));
+
+//     const maleLineColor = '#0056b3';
+//     const femaleLineColor = '#d62728';
+
+//     // Draw male line
+//     g.append('path')
+//         .datum(timeSeriesData.map(d => ({ month: d.month, value: d.maleCount })))
+//         .attr('fill', 'none')
+//         .attr('stroke', maleLineColor)
+//         .attr('stroke-width', 2)
+//         .attr('d', line);
+
+//     // Draw female line
+//     g.append('path')
+//         .datum(timeSeriesData.map(d => ({ month: d.month, value: d.femaleCount })))
+//         .attr('fill', 'none')
+//         .attr('stroke', femaleLineColor)
+//         .attr('stroke-width', 2)
+//         .attr('d', line);
+
+//     // Add points for male line
+//     g.selectAll('.male-point')
+//         .data(timeSeriesData)
+//         .enter()
+//         .append('circle')
+//         .attr('class', 'male-point')
+//         .attr('cx', d => xScale(d.month))
+//         .attr('cy', d => yScale(d.maleCount))
+//         .attr('r', 4)
+//         .attr('fill', maleLineColor);
+
+//     // Add points for female line
+//     g.selectAll('.female-point')
+//         .data(timeSeriesData)
+//         .enter()
+//         .append('circle')
+//         .attr('class', 'female-point')
+//         .attr('cx', d => xScale(d.month))
+//         .attr('cy', d => yScale(d.femaleCount))
+//         .attr('r', 4)
+//         .attr('fill', femaleLineColor);
+
+//     // Add legend
+//     const legend = svg.append('g').attr('transform', `translate(${width + margin.left - 150}, 20)`);
+
+//     legend.append('circle').attr('cx', 0).attr('cy', 10).attr('r', 5).style('fill', maleLineColor);
+//     legend.append('text').attr('x', 10).attr('y', 15).text('Men').style('font-size', '12px');
+
+//     legend.append('circle').attr('cx', 0).attr('cy', 30).attr('r', 5).style('fill', femaleLineColor);
+//     legend.append('text').attr('x', 10).attr('y', 35).text('Women').style('font-size', '12px');
+
+//     legend.append('text')
+//         .attr('x', 0)
+//         .attr('y', 0)
+//         .text(selectedYear === 'all' ? 'All Years' : `Year: ${selectedYear}`)
+//         .style('font-size', '14px')
+//         .style('font-weight', 'bold');
+// }
+
+// Add year filter
+
 function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
     const svgWidth = 800; // Match width with other components
     const svgHeight = 250; // Ensure space for legends and axes
@@ -268,6 +310,16 @@ function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
+    // Tooltip
+    const tooltip = d3.select('body').append('div')
+        .attr('class', 'tooltip')
+        .style('position', 'absolute')
+        .style('background-color', 'white')
+        .style('border', '1px solid #ccc')
+        .style('border-radius', '4px')
+        .style('padding', '10px')
+        .style('display', 'none');
+
     // Scales
     const xScale = d3.scalePoint()
         .domain(timeSeriesData.map(d => d.month))
@@ -281,15 +333,14 @@ function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
 
     // Axes
     g.append('g')
-    .attr('transform', `translate(0,${height})`)
-    .call(
-        d3.axisBottom(xScale)
-            .tickFormat(month => month.slice(0, 3)) // Use first 3 letters of month
-    );
+        .attr('transform', `translate(0,${height})`)
+        .call(
+            d3.axisBottom(xScale)
+                .tickFormat(month => month.slice(0, 3)) // Use first 3 letters of month
+        );
 
     g.append('g').call(d3.axisLeft(yScale));
 
-    // Line generator
     const line = d3.line()
         .x(d => xScale(d.month))
         .y(d => yScale(d.value));
@@ -313,7 +364,7 @@ function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
         .attr('stroke-width', 2)
         .attr('d', line);
 
-    // Add points for male line
+    // Add male points with hover interaction
     g.selectAll('.male-point')
         .data(timeSeriesData)
         .enter()
@@ -322,9 +373,25 @@ function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
         .attr('cx', d => xScale(d.month))
         .attr('cy', d => yScale(d.maleCount))
         .attr('r', 4)
-        .attr('fill', maleLineColor);
+        .attr('fill', maleLineColor)
+        .on('mouseover', (event, d) => {
+            tooltip.style('display', 'block')
+                .html(`
+                    <strong>Gender:</strong> Male<br>
+                    <strong>Month:</strong> ${d.month}<br>
+                    <strong>Year:</strong> ${selectedYear === 'all' ? 'All Years' : selectedYear}<br>
+                    <strong>Value:</strong> ${d.maleCount}
+                `);
+        })
+        .on('mousemove', (event) => {
+            tooltip.style('left', `${event.pageX + 10}px`)
+                .style('top', `${event.pageY - 28}px`);
+        })
+        .on('mouseout', () => {
+            tooltip.style('display', 'none');
+        });
 
-    // Add points for female line
+    // Add female points with hover interaction
     g.selectAll('.female-point')
         .data(timeSeriesData)
         .enter()
@@ -333,7 +400,23 @@ function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
         .attr('cx', d => xScale(d.month))
         .attr('cy', d => yScale(d.femaleCount))
         .attr('r', 4)
-        .attr('fill', femaleLineColor);
+        .attr('fill', femaleLineColor)
+        .on('mouseover', (event, d) => {
+            tooltip.style('display', 'block')
+                .html(`
+                    <strong>Gender:</strong> Female<br>
+                    <strong>Month:</strong> ${d.month}<br>
+                    <strong>Year:</strong> ${selectedYear === 'all' ? 'All Years' : selectedYear}<br>
+                    <strong>Value:</strong> ${d.femaleCount}
+                `);
+        })
+        .on('mousemove', (event) => {
+            tooltip.style('left', `${event.pageX + 10}px`)
+                .style('top', `${event.pageY - 28}px`);
+        })
+        .on('mouseout', () => {
+            tooltip.style('display', 'none');
+        });
 
     // Add legend
     const legend = svg.append('g').attr('transform', `translate(${width + margin.left - 150}, 20)`);
@@ -352,7 +435,6 @@ function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
         .style('font-weight', 'bold');
 }
 
-// Add year filter
 function addYearFilter(containerId, years, onChange) {
     const container = d3.select(containerId);
     container.html(''); // Clear previous content
@@ -382,106 +464,6 @@ Promise.all([d3.csv(datasetURL)]).then(([csvData]) => {
 
     drawTimeSeries('#time-series-chart', timeSeriesData, 'all');
 });
-
-// function drawBubbleMap(svgId, stateData, salesData) {
-//     const svgWidth = 400; // Width of the SVG container
-//     const svgHeight = 250; // Height of the SVG container
-
-//     const svg = d3.select(svgId)
-//         .attr('width', svgWidth)
-//         .attr('height', svgHeight);
-
-//     svg.selectAll('*').remove(); // Clear the SVG before redrawing
-
-//     const projection = d3.geoAlbersUsa()
-//         .scale(550) // Maintain consistent scaling
-//         .translate([svgWidth / 2, svgHeight / 2]); // Center the map
-
-//     const path = d3.geoPath().projection(projection);
-
-//     // Draw the base map
-//     svg.selectAll('path')
-//         .data(stateData)
-//         .enter()
-//         .append('path')
-//         .attr('d', path)
-//         .attr('fill', '#f0f0f0') // Default background color
-//         .attr('stroke', '#000')
-//         .attr('stroke-width', 0.5);
-
-//     // Get profits and calculate max absolute value
-//     const profits = salesData.stateProfits;
-//     console.log(profits);
-//     const maxProfit = d3.max(Object.values(profits).map(Math.abs)) || 1;
-
-//     // Define scales
-//     const radiusScale = d3.scaleSqrt()
-//         .domain([0, maxProfit])
-//         .range([2, 20]); // Adjust size range as needed
-
-//     const colorScale = d3.scaleThreshold()
-//         .domain([0]) // 0 separates negative and positive
-//         .range(['red', 'grey', 'green']); // Red for loss, grey for neutral, green for profit
-
-//     // Add bubbles
-//     svg.selectAll('circle')
-//         .data(stateData.filter(d => profits[d.properties.name.toLowerCase()] !== undefined))
-//         .enter()
-//         .append('circle')
-//         .attr('cx', d => projection(d3.geoCentroid(d))[0]) // Bubble position (center of state)
-//         .attr('cy', d => projection(d3.geoCentroid(d))[1])
-//         .attr('r', d => radiusScale(Math.abs(profits[d.properties.name.toLowerCase()] || 0)))
-//         .attr('fill', d => {
-//             const profit = profits[d.properties.name.toLowerCase()] || 0;
-//             return profit > 0 ? 'green' : profit < 0 ? 'red' : 'grey';
-//         })
-//         .attr('stroke', '#fff')
-//         .attr('stroke-width', 0.5);
-//     // Add legend
-//     addBubbleLegend(svgId.replace('#', '') + '-legend', radiusScale, colorScale);
-// }
-
-// function addBubbleLegend(legendId, radiusScale, colorScale) {
-//     const legendContainer = d3.select(`#${legendId}`);
-//     legendContainer.html(''); // Clear previous content
-
-//     // Add profit color legend
-//     legendContainer.append('div')
-//         .attr('class', 'legend-item')
-//         .html(`
-//             <div class="legend-color" style="background-color: green"></div>
-//             <div class="legend-label">Profit</div>
-//         `);
-
-//     legendContainer.append('div')
-//         .attr('class', 'legend-item')
-//         .html(`
-//             <div class="legend-color" style="background-color: grey"></div>
-//             <div class="legend-label">Zero</div>
-//         `);
-
-//     legendContainer.append('div')
-//         .attr('class', 'legend-item')
-//         .html(`
-//             <div class="legend-color" style="background-color: red"></div>
-//             <div class="legend-label">Loss</div>
-//         `);
-
-//     // Add size legend
-//     const sizes = [radiusScale.domain()[0], radiusScale.domain()[1] / 2, radiusScale.domain()[1]];
-
-//     sizes.forEach(size => {
-//         legendContainer.append('div')
-//             .attr('class', 'legend-item')
-//             .html(`
-//                 <svg width="50" height="50">
-//                     <circle cx="25" cy="25" r="${radiusScale(size)}" fill="grey" stroke="black"></circle>
-//                 </svg>
-//                 <span>$${size.toFixed(0)}</span>
-//             `);
-//     });
-// }
-
 
 function drawBubbleMap(svgId, stateData, salesData) {
     const svgWidth = 400; // Width of the SVG container
