@@ -295,6 +295,7 @@ function processTimeSeriesData(data, yearFilter = null) {
 // Add year filter
 
 function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
+    console.log(selectedYear);
     const svgWidth = 800; // Match width with other components
     const svgHeight = 250; // Ensure space for legends and axes
 
@@ -379,7 +380,7 @@ function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
                 .html(`
                     <strong>Gender:</strong> Male<br>
                     <strong>Month:</strong> ${d.month}<br>
-                    <strong>Year:</strong> ${selectedYear === 'all' ? 'All Years' : selectedYear}<br>
+                    <strong>Year:</strong> ${selectedYear === 'all' ? 'All Years' : parseInt(selectedYear)}<br>
                     <strong>Value:</strong> ${d.maleCount}
                 `);
         })
@@ -406,7 +407,7 @@ function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
                 .html(`
                     <strong>Gender:</strong> Female<br>
                     <strong>Month:</strong> ${d.month}<br>
-                    <strong>Year:</strong> ${selectedYear === 'all' ? 'All Years' : selectedYear}<br>
+                    <strong>Year:</strong> ${selectedYear === 'all' ? 'All Years' : parseInt(selectedYear)}<br>
                     <strong>Value:</strong> ${d.femaleCount}
                 `);
         })
@@ -430,7 +431,7 @@ function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
     legend.append('text')
         .attr('x', 0)
         .attr('y', 0)
-        .text(selectedYear === 'all' ? 'All Years' : `Year: ${selectedYear}`)
+        .text(selectedYear === 'all' ? 'All Years' : `Year: ${parseInt(selectedYear)}`)
         .style('font-size', '14px')
         .style('font-weight', 'bold');
 }
@@ -443,7 +444,8 @@ function addYearFilter(containerId, years, onChange) {
     select.append('option').attr('value', 'all').text('All Years');
 
     years.forEach(year => {
-        select.append('option').attr('value', year).text(year);
+        //select.append('option').attr('value', year).text(year);
+        select.append('option').attr('value', year).text(parseInt(year));
     });
 
     select.on('change', function () {
