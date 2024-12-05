@@ -131,9 +131,9 @@ Promise.all([d3.json(stateURL), d3.csv(datasetURL)]).then(([topoData, csvData]) 
     // Initial rendering with no filters applied
     const initialData = processData(dataset);
     drawMap('#heatmap', stateData, initialData); // First map
-    drawMap('#bubblemap', stateData, initialData); // Second map
+    drawBubbleMap('#bubblemap', stateData, initialData);
 
-    // Add event listeners for dropdown filters
+    // Add event listeners for filters
     d3.select('#gender-filter').on('change', updateMaps);
     d3.select('#age-filter').on('change', updateMaps);
 
@@ -147,7 +147,7 @@ Promise.all([d3.json(stateURL), d3.csv(datasetURL)]).then(([topoData, csvData]) 
 
         // Redraw both maps with filtered data
         drawMap('#heatmap', stateData, filteredData);
-        drawMap('#bubblemap', stateData, filteredData);
+        drawBubbleMap('#bubblemap', stateData, filteredData);
     }
 }).catch((error) => {
     console.error('Error loading data:', error);
@@ -229,42 +229,28 @@ document.getElementById("toggle-legend").addEventListener("click", function () {
 // });
 
 
-
-
-
-
 function processTimeSeriesData(data, yearFilter = null) {
-    //print the unique years in the dataset
-    console.log("Unique years:", Array.from(new Set(data.map(d => d['Year']))));
     // Apply year filter if specified
     if (yearFilter && yearFilter !== 'all') {
         data = data.filter(d => d['Year'] === yearFilter);
     }
-
     const monthNames = [
         "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"
     ];
-
     // Initialize an array for the 12 months
     const timeSeries = Array.from({ length: 12 }, (_, monthIndex) => {
         const month = monthNames[monthIndex];
         const femaleCount = data.filter(d => d['Month'] === month && d['Customer Gender'] === 'F').length;
         const maleCount = data.filter(d => d['Month'] === month && d['Customer Gender'] === 'M').length;
-        console.log(month, femaleCount, maleCount);
-
         return {
             month,
             femaleCount,
             maleCount
         };
     });
-    console.log("Time series data:", timeSeries);
     return timeSeries;
 }
-
-
-
 
 function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
     const svgWidth = 800; // Match width with other components
@@ -308,8 +294,8 @@ function drawTimeSeries(svgId, timeSeriesData, selectedYear) {
         .x(d => xScale(d.month))
         .y(d => yScale(d.value));
 
-    const maleLineColor = '#0056b3'; // Darker blue
-    const femaleLineColor = '#d62728'; // Warm red
+    const maleLineColor = '#0056b3';
+    const femaleLineColor = '#d62728';
 
     // Draw male line
     g.append('path')
@@ -396,3 +382,224 @@ Promise.all([d3.csv(datasetURL)]).then(([csvData]) => {
 
     drawTimeSeries('#time-series-chart', timeSeriesData, 'all');
 });
+
+// function drawBubbleMap(svgId, stateData, salesData) {
+//     const svgWidth = 400; // Width of the SVG container
+//     const svgHeight = 250; // Height of the SVG container
+
+//     const svg = d3.select(svgId)
+//         .attr('width', svgWidth)
+//         .attr('height', svgHeight);
+
+//     svg.selectAll('*').remove(); // Clear the SVG before redrawing
+
+//     const projection = d3.geoAlbersUsa()
+//         .scale(550) // Maintain consistent scaling
+//         .translate([svgWidth / 2, svgHeight / 2]); // Center the map
+
+//     const path = d3.geoPath().projection(projection);
+
+//     // Draw the base map
+//     svg.selectAll('path')
+//         .data(stateData)
+//         .enter()
+//         .append('path')
+//         .attr('d', path)
+//         .attr('fill', '#f0f0f0') // Default background color
+//         .attr('stroke', '#000')
+//         .attr('stroke-width', 0.5);
+
+//     // Get profits and calculate max absolute value
+//     const profits = salesData.stateProfits;
+//     console.log(profits);
+//     const maxProfit = d3.max(Object.values(profits).map(Math.abs)) || 1;
+
+//     // Define scales
+//     const radiusScale = d3.scaleSqrt()
+//         .domain([0, maxProfit])
+//         .range([2, 20]); // Adjust size range as needed
+
+//     const colorScale = d3.scaleThreshold()
+//         .domain([0]) // 0 separates negative and positive
+//         .range(['red', 'grey', 'green']); // Red for loss, grey for neutral, green for profit
+
+//     // Add bubbles
+//     svg.selectAll('circle')
+//         .data(stateData.filter(d => profits[d.properties.name.toLowerCase()] !== undefined))
+//         .enter()
+//         .append('circle')
+//         .attr('cx', d => projection(d3.geoCentroid(d))[0]) // Bubble position (center of state)
+//         .attr('cy', d => projection(d3.geoCentroid(d))[1])
+//         .attr('r', d => radiusScale(Math.abs(profits[d.properties.name.toLowerCase()] || 0)))
+//         .attr('fill', d => {
+//             const profit = profits[d.properties.name.toLowerCase()] || 0;
+//             return profit > 0 ? 'green' : profit < 0 ? 'red' : 'grey';
+//         })
+//         .attr('stroke', '#fff')
+//         .attr('stroke-width', 0.5);
+//     // Add legend
+//     addBubbleLegend(svgId.replace('#', '') + '-legend', radiusScale, colorScale);
+// }
+
+// function addBubbleLegend(legendId, radiusScale, colorScale) {
+//     const legendContainer = d3.select(`#${legendId}`);
+//     legendContainer.html(''); // Clear previous content
+
+//     // Add profit color legend
+//     legendContainer.append('div')
+//         .attr('class', 'legend-item')
+//         .html(`
+//             <div class="legend-color" style="background-color: green"></div>
+//             <div class="legend-label">Profit</div>
+//         `);
+
+//     legendContainer.append('div')
+//         .attr('class', 'legend-item')
+//         .html(`
+//             <div class="legend-color" style="background-color: grey"></div>
+//             <div class="legend-label">Zero</div>
+//         `);
+
+//     legendContainer.append('div')
+//         .attr('class', 'legend-item')
+//         .html(`
+//             <div class="legend-color" style="background-color: red"></div>
+//             <div class="legend-label">Loss</div>
+//         `);
+
+//     // Add size legend
+//     const sizes = [radiusScale.domain()[0], radiusScale.domain()[1] / 2, radiusScale.domain()[1]];
+
+//     sizes.forEach(size => {
+//         legendContainer.append('div')
+//             .attr('class', 'legend-item')
+//             .html(`
+//                 <svg width="50" height="50">
+//                     <circle cx="25" cy="25" r="${radiusScale(size)}" fill="grey" stroke="black"></circle>
+//                 </svg>
+//                 <span>$${size.toFixed(0)}</span>
+//             `);
+//     });
+// }
+
+
+function drawBubbleMap(svgId, stateData, salesData) {
+    const svgWidth = 400; // Width of the SVG container
+    const svgHeight = 250; // Height of the SVG container
+
+    const svg = d3.select(svgId)
+        .attr('width', svgWidth)
+        .attr('height', svgHeight);
+
+    svg.selectAll('*').remove(); // Clear the SVG before redrawing
+
+    const projection = d3.geoAlbersUsa()
+        .scale(550) // Maintain consistent scaling
+        .translate([svgWidth / 2, svgHeight / 2]); // Center the map
+
+    const path = d3.geoPath().projection(projection);
+
+    // Draw the base map
+    svg.selectAll('path')
+        .data(stateData)
+        .enter()
+        .append('path')
+        .attr('d', path)
+        .attr('fill', '#f0f0f0') // Default background color
+        .attr('stroke', '#000')
+        .attr('stroke-width', 0.5);
+
+    // Get profits and calculate averages
+    const profits = salesData.stateProfits;
+    const statesWithProfits = Object.keys(profits).length;
+    const totalProfit = Object.values(profits).reduce((sum, value) => sum + value, 0);
+    const avgProfit = statesWithProfits > 0 ? totalProfit / statesWithProfits : 0;
+
+    // Calculate minimum and maximum profit per state
+    const minProfit = d3.min(Object.values(profits)) || 0;
+    const maxProfit = d3.max(Object.values(profits)) || 1;
+
+    console.log('Min Profit:', minProfit, 'Max Profit:', maxProfit, 'Avg Profit:', avgProfit);
+
+    // Updated profit ranges
+    const profitRanges = [
+        { range: [-Infinity, -500], color: 'red' },         // Large loss
+        { range: [-500, 0], color: 'lightcoral' },         // Small loss
+        { range: [0, 150000], color: 'lightgreen' },       // Small profit
+        { range: [150000, Infinity], color: 'green' }      // Large profit
+    ];
+
+    // Define size scale for bubbles (based on average profit)
+    const radiusScale = d3.scaleSqrt()
+        .domain([Math.abs(minProfit), Math.abs(avgProfit)])
+        .range([5, 10]); // Adjust size range as needed
+
+    // Add bubbles
+    svg.selectAll('circle')
+        .data(stateData.filter(d => profits[d.properties.name.toLowerCase()] !== undefined))
+        .enter()
+        .append('circle')
+        .attr('cx', d => projection(d3.geoCentroid(d))[0]) // Bubble position (center of state)
+        .attr('cy', d => projection(d3.geoCentroid(d))[1])
+        .attr('r', d => {
+            const profit = profits[d.properties.name.toLowerCase()] || 0;
+            return radiusScale(Math.abs(profit));
+        })
+        .attr('fill', d => {
+            const profit = profits[d.properties.name.toLowerCase()] || 0;
+            const range = profitRanges.find(r => profit >= r.range[0] && profit < r.range[1]);
+            return range ? range.color : 'grey'; // Default to grey for undefined ranges
+        })
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 0.5);
+
+    // Add legend
+    addBubbleLegend(svgId.replace('#', '') + '-legend', profitRanges, radiusScale);
+}
+
+function addBubbleLegend(legendId, profitRanges, radiusScale) {
+    //print the radius scale
+    console.log(radiusScale.domain());
+    const legendContainer = d3.select(`#${legendId}`);
+    legendContainer.html(''); // Clear previous content
+
+    // Add color legend
+    profitRanges.forEach(({ range, color }) => {
+        legendContainer.append('div')
+            .attr('class', 'legend-item')
+            .html(`
+                <div class="legend-color" style="background-color: ${color}"></div>
+                <div class="legend-label">${range[0] === -Infinity ? `< $${formatThreshold(Math.abs(range[1]))}` :
+                    range[1] === Infinity ? `≥ $${formatThreshold(range[0])}` :
+                    `$${formatThreshold(range[0])} - $${formatThreshold(range[1])}`}</div>
+            `);
+    });
+
+
+    // Add title for the bubble legend
+    legendContainer.append('div')
+        .attr('class', 'legend-title')
+        .html('<strong>Avg Profit/Size</strong>');
+
+    // Add size legend using the same scale as the map
+    const sizes = [
+        radiusScale.domain()[0],              // Minimum value in the domain
+        (radiusScale.domain()[0] + radiusScale.domain()[1]) / 2, // Midpoint value
+        radiusScale.domain()[1]              // Maximum value in the domain
+    ];
+    const offset = 25; // Offset for the circle within the SVG
+
+    sizes.forEach(size => {
+        const radius = radiusScale(size); // Calculate the radius for the legend bubble
+        legendContainer.append('div')
+            .attr('class', 'legend-item legend-bubble')
+            .html(`
+                <svg width="${radius * 2 + offset}" height="${radius * 2 + 6}" style="display: inline-block; vertical-align: middle;">
+                    <circle cx="${radius + offset / 2}" cy="${radius + 5}" r="${radius}" fill="grey" stroke="black"></circle>
+                </svg>
+                <span style="margin-left: 10px; vertical-align: middle;">$${size.toFixed(0)}</span>
+            `);
+    });
+}
+
+
