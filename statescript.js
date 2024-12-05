@@ -227,13 +227,18 @@ Promise.all([d3.json(stateURL), d3.csv(datasetURL)]).then(([topoData, csvData]) 
     console.error('Error loading data:', error);
 });
 
+// Ensure the legend is visible by default
+document.querySelectorAll(".legend").forEach(legend => {
+    legend.style.display = "block";
+});
+
 // Toggle legend visibility
 document.getElementById("toggle-legend").addEventListener("click", function () {
     const legends = document.querySelectorAll(".legend");
     const button = this;
 
     legends.forEach(legend => {
-        if (legend.style.display === "none" || legend.style.display === "") {
+        if (legend.style.display === "none") {
             legend.style.display = "block"; // Show legend
             button.textContent = "Hide Legend"; // Update button text
         } else {
@@ -242,6 +247,7 @@ document.getElementById("toggle-legend").addEventListener("click", function () {
         }
     });
 });
+
 
 //Timer series
 function processTimeSeriesData(data, yearFilter = null) {

@@ -70,7 +70,7 @@ h3 {
 
 /* General legend styling */
 .legend {
-    display: none; /* Initially hidden */
+    display: block; /* Initially hidden */
     font-size: 14px;
     color: #333;
     background-color: #f8f9fa;
