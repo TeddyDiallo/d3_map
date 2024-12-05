@@ -139,3 +139,14 @@ h3 {
     border-radius: 10px; /* Rounded corners for the maps */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for each map */
 }
+
+.tooltip {
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    display: none;
+    z-index: 1000; /* Ensure it is on top of other elements */
+    pointer-events: none; /* Prevent the tooltip from interfering with mouse events */
+}
